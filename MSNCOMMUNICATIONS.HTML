@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSN Communications Portal & Silver Particle Terrain</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+--primary: #38bdf8;
+--primary-glow: rgba(56, 189, 248, 0.4);
+--success: #22c55e;
+--success-glow: rgba(34, 197, 94, 0.4);
+--danger: #ef4444;
+--warning: #f59e0b;
+
+--bg-dark: #000000;
+--bg-light: #f2f2f7;
+
+--panel-dark: #09090b;
+--panel-light: #ffffff;
+
+--text-dark: #fbfbfd;
+--text-muted-dark: #86868b;
+--text-light: #1d1d1f;
+--text-muted-light: #86868b;
+
+--glass-bg-dark: rgba(18, 18, 20, 0.82);
+--glass-bg-light: rgba(255, 255, 255, 0.85);
+--glass-border-dark: rgba(255, 255, 255, 0.12);
+--glass-border-light: rgba(0, 0, 0, 0.12);
+
+--input-bg-dark: rgba(255, 255, 255, 0.08);
+--input-bg-light: rgba(0, 0, 0, 0.05);
+
+--bg: var(--bg-dark);
+--panel: var(--panel-dark);
+--text: var(--text-dark);
+--text-muted: var(--text-muted-dark);
+--glass-bg: var(--glass-bg-dark);
+--glass-border: var(--glass-border-dark);
+--input-bg: var(--input-bg-dark);
+}
+
+[data-theme="light"] {
+--bg: var(--bg-light);
+--panel: var(--panel-light);
+--text: var(--text-light);
+--text-muted: var(--text-muted-light);
+--glass-bg: var(--glass-bg-light);
+--glass-border: var(--glass-border-light);
+--input-bg: var(--input-bg-light);
+}
+
+html, body {
+overscroll-behavior-x: none;
+touch-action: pan-y;
+background-color: var(--bg);
+color: var(--text);
+min-height: 100vh;
+overflow-x: hidden;
+transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+-webkit-font-smoothing: antialiased;
+}
+
+/* THREE.JS BACKGROUND CANVAS WITH BLUR OVERLAY */
+#canvas-background {
+position: fixed;
+top: 0; left: 0;
+width: 100vw; height: 100vh;
+z-index: -2;
+pointer-events: none;
+filter: blur(12px);
+transform: scale(1.05);
+}
+
+.canvas-backdrop {
+position: fixed;
+top: 0; left: 0;
+width: 100vw; height: 100vh;
+background: rgba(0, 0, 0, 0.45);
+z-index: -1;
+pointer-events: none;
+}
+
+header {
+position: sticky; top: 0; z-index: 100;
+background: var(--glass-bg);
+backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+border-bottom: 1px solid var(--glass-border);
+padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+flex-wrap: wrap; gap: 1rem;
+}
+
+.brand { display: flex; align-items: center; gap: 1rem; }
+.logo {
+width: 44px; height: 44px; background: rgba(56, 189, 248, 0.1);
+border: 1px solid var(--glass-border); border-radius: 12px;
+display: flex; align-items: center; justify-content: center;
+font-weight: bold; font-size: 1.2rem; color: var(--primary);
+box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.title { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
+
+.nav-controls { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+
+.profile-container {
+display: flex; align-items: center; gap: 0.6rem;
+background: var(--input-bg); padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+border-radius: 30px; border: 1px solid var(--glass-border);
+}
+.profile-avatar {
+width: 34px; height: 34px; border-radius: 50%;
+background: var(--primary); color: #000; font-weight: 700;
+display: flex; align-items: center; justify-content: center;
+overflow: hidden; border: 1px solid var(--glass-border);
+}
+.profile-name { font-size: 0.85rem; font-weight: 600; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.btn-nav {
+background: transparent; border: 1px solid var(--glass-border);
+color: var(--text); padding: 0.5rem 0.9rem; border-radius: 18px;
+cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; font-weight: 500;
+display: flex; align-items: center; gap: 0.4rem;
+}
+.btn-nav:hover { background: rgba(255, 255, 255, 0.1); }
+.btn-nav-danger { border-color: rgba(239, 68, 68, 0.4); color: var(--danger); }
+.btn-nav-danger:hover { background: rgba(239, 68, 68, 0.15); }
+.btn-nav-primary { background: var(--primary); color: #000; font-weight: 700; border: none; }
+.btn-nav-primary:hover { opacity: 0.9; }
+.btn-nav-warning { background: var(--warning); color: #000; font-weight: 700; border: none; }
+.btn-nav-warning:hover { opacity: 0.9; }
+
+.badge-owner {
+background: linear-gradient(135deg, #f59e0b, #d97706);
+color: #000; padding: 0.3rem 0.8rem; border-radius: 12px;
+font-weight: 700; font-size: 0.75rem; text-transform: uppercase;
+}
+
+/* AUTHENTICATION OVERLAY & ROLE SELECTOR */
+.auth-overlay {
+position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+background: rgba(0,0,0,0.85); backdrop-filter: blur(30px);
+z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem;
+}
+.auth-header-display {
+font-size: 2rem; font-weight: 800; color: var(--primary); text-transform: uppercase;
+letter-spacing: 1px; margin-bottom: 1.5rem; text-shadow: 0 0 25px var(--primary-glow);
+}
+.auth-card {
+background: var(--glass-bg); border: 1px solid var(--glass-border);
+padding: 2.5rem; border-radius: 32px; max-width: 440px; width: 100%;
+text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+}
+.auth-card h2 { font-size: 1.8rem; margin-bottom: 0.3rem; font-weight: 800; }
+.auth-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.8rem; }
+.auth-form { display: flex; flex-direction: column; gap: 1.2rem; }
+
+.otp-container {
+display: flex; gap: 0.5rem; justify-content: center; margin: 0.2rem 0;
+}
+.otp-box {
+width: 45px; height: 50px; text-align: center; font-size: 1.3rem; font-weight: 700;
+border-radius: 12px; border: 1px solid var(--glass-border); background: var(--input-bg);
+color: var(--text); outline: none; transition: all 0.2s;
+}
+.otp-box:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+
+.role-selection-wrapper {
+margin-top: 0.2rem;
+display: flex; flex-direction: column; gap: 0.6rem; text-align: left;
+background: var(--input-bg); padding: 1rem; border-radius: 16px;
+border: 1px solid var(--glass-border);
+}
+.role-label-title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.role-options { display: flex; justify-content: space-around; align-items: center; gap: 1rem; }
+.role-option {
+display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem; font-weight: 600;
+}
+.role-option input[type="radio"] {
+accent-color: var(--primary); width: 18px; height: 18px; cursor: pointer;
+}
+
+.auth-btn {
+background: var(--primary); color: #000; font-weight: 700; border: none;
+padding: 1rem; border-radius: 16px; cursor: pointer; font-size: 1rem;
+box-shadow: 0 0 20px var(--primary-glow); transition: transform 0.2s; margin-top: 0.5rem;
+}
+.auth-btn:hover { transform: scale(1.02); }
+
+main { max-width: 1250px; margin: 2rem auto; padding: 0 1.5rem 4rem; position: relative; z-index: 2; }
+
+.toolbar {
+display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;
+background: var(--glass-bg); backdrop-filter: blur(25px);
+padding: 1.5rem; border-radius: 24px; border: 1px solid var(--glass-border);
+}
+@media (min-width: 768px) {
+.toolbar { flex-direction: row; justify-content: space-between; align-items: center; }
+}
+
+.search-wrapper { flex: 1; max-width: 400px; }
+.search-wrapper input {
+width: 100%; padding: 0.9rem 1.2rem; border-radius: 16px;
+border: 1px solid var(--glass-border); background: var(--input-bg);
+color: var(--text); font-size: 1rem; outline: none; transition: all 0.3s;
+}
+.search-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+
+.tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; background: var(--input-bg); padding: 0.4rem; border-radius: 20px; }
+.tab {
+padding: 0.6rem 1.2rem; border-radius: 16px; border: none;
+background: transparent; color: var(--text-muted); cursor: pointer; font-weight: 500;
+}
+.tab.active { background: var(--glass-border); color: var(--text); }
+
+.heading-toolbar-container {
+display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+margin-bottom: 2rem; background: var(--glass-bg); padding: 1rem 1.5rem;
+border-radius: 20px; border: 1px solid var(--glass-border);
+backdrop-filter: blur(25px);
+}
+.heading-box-label { font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase; }
+.heading-pills-wrapper { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; flex: 1; }
+.heading-pill-group {
+display: flex; align-items: center; background: var(--input-bg); border: 1px solid var(--glass-border);
+border-radius: 14px; overflow: hidden;
+}
+.heading-pill {
+background: transparent; border: none; padding: 0.4rem 0.8rem;
+font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text);
+transition: all 0.2s;
+}
+.heading-pill.active { background: var(--primary); color: #000; }
+.heading-pill-edit, .heading-pill-delete {
+background: transparent; border: none; padding: 0.4rem 0.5rem; font-size: 0.75rem; cursor: pointer;
+}
+.heading-pill-edit { color: var(--primary); border-left: 1px solid var(--glass-border); }
+.heading-pill-delete { color: var(--danger); border-left: 1px solid var(--glass-border); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+.card {
+background: var(--glass-bg); backdrop-filter: blur(25px);
+-webkit-backdrop-filter: blur(25px);
+border: 1px solid var(--glass-border); border-radius: 24px;
+padding: 1.5rem; cursor: pointer; transition: all 0.3s ease;
+display: flex; flex-direction: column; justify-content: space-between; min-height: 190px;
+position: relative;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+.card:hover { transform: translateY(-5px); border-color: rgba(56,189,248,0.4); box-shadow: 0 15px 35px rgba(56,189,248,0.15); }
+
+.card-add-box {
+border: 2px dashed var(--primary);
+background: rgba(56, 189, 248, 0.04);
+align-items: center;
+justify-content: center;
+text-align: center;
+min-height: 190px;
+}
+.card-add-box:hover { background: rgba(56, 189, 248, 0.1); }
+.add-box-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; color: var(--primary); }
+.add-box-icon { width: 48px; height: 48px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 700; }
+.add-box-text { font-weight: 600; font-size: 0.95rem; }
+
+.type-badge {
+background: rgba(56, 189, 248, 0.15); color: var(--primary);
+padding: 0.2rem 0.6rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; display: inline-block;
+}
+.tier-badge {
+background: rgba(255, 255, 255, 0.1); color: var(--text);
+padding: 0.3rem 0.8rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--glass-border);
+}
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.card-title { font-size: 1.15rem; font-weight: 600; line-height: 1.4; flex: 1; padding-right: 1rem; }
+.card-docs { font-size: 0.8rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: auto; }
+
+.owner-card-actions {
+display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 0.8rem; border-top: 1px dashed var(--glass-border); flex-wrap: wrap;
+}
+.btn-owner-edit, .btn-owner-delete, .btn-owner-change, .btn-owner-add {
+padding: 0.4rem 0.8rem; border-radius: 10px; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; text-align: center;
+}
+.btn-owner-edit { background: rgba(56, 189, 248, 0.2); color: var(--primary); border: 1px solid var(--primary); flex: 1; }
+.btn-owner-change { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); flex: 1; }
+.btn-owner-delete { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); flex: 1; }
+.btn-owner-add { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); width: 100%; margin-top: 0.6rem; }
+
+.modal-overlay {
+position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(15px);
+-webkit-backdrop-filter: blur(15px);
+z-index: 1000; display: flex; justify-content: center; align-items: center;
+opacity: 0; pointer-events: none; transition: opacity 0.4s ease; padding: 1rem;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.modal {
+background: var(--glass-bg); backdrop-filter: blur(35px);
+-webkit-backdrop-filter: blur(35px);
+border: 1px solid var(--glass-border); border-radius: 32px;
+width: 100%; max-width: 950px; max-height: 90vh;
+display: flex; flex-direction: column; overflow: hidden; position: relative;
+transform: translateY(50px); transition: transform 0.4s ease;
+box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+.modal-overlay.active .modal { transform: translateY(0); }
+
+.modal-nav-header {
+display: flex; justify-content: space-between; align-items: center;
+padding: 1rem 1.5rem; border-bottom: 1px solid var(--glass-border);
+background: rgba(0,0,0,0.2);
+}
+.btn-back-nav {
+background: var(--input-bg); border: 1px solid var(--glass-border);
+color: var(--text); padding: 0.4rem 1rem; border-radius: 12px;
+cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;
+}
+.btn-back-nav:hover { background: rgba(255,255,255,0.15); }
+
+.modal-content-wrapper { display: flex; flex-direction: column; overflow-y: auto; height: 100%; }
+@media (min-width: 800px) { .modal-content-wrapper { flex-direction: row; overflow: hidden; } }
+
+.modal-left { flex: 1; padding: 2rem; border-bottom: 1px solid var(--glass-border); overflow-y: auto; }
+@media (min-width: 800px) { .modal-left { border-bottom: none; border-right: 1px solid var(--glass-border); } }
+
+.modal-right { flex: 1; padding: 2rem; background: rgba(0,0,0,0.15); overflow-y: auto; display: flex; flex-direction: column; }
+
+.section-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.req-docs-list { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+.req-doc-item { background: var(--input-bg); border: 1px solid var(--glass-border); padding: 0.9rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; }
+.req-doc-name { font-size: 0.88rem; font-weight: 500; }
+
+.file-upload-btn {
+position: relative; overflow: hidden; background: rgba(255,255,255,0.1);
+border: 1px solid rgba(255,255,255,0.2); color: var(--text); padding: 0.4rem 0.8rem;
+border-radius: 12px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center;
+}
+.file-upload-btn input[type="file"] { position: absolute; top: 0; right: 0; bottom: 0; left: 0; opacity: 0; cursor: pointer; }
+
+.auto-synced-badge {
+background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);
+padding: 0.2rem 0.6rem; border-radius: 8px; font-size: 0.72rem; font-weight: 600; margin-left: 0.5rem;
+}
+
+.custom-docs-area { margin-bottom: 1.5rem; background: rgba(0,0,0,0.15); border-radius: 20px; padding: 1.2rem; border: 1px solid var(--glass-border); }
+.custom-doc-row { display: flex; gap: 0.8rem; margin-bottom: 0.8rem; }
+.doc-input, .form-input, .textarea-notes {
+width: 100%; padding: 0.85rem 1.1rem; border-radius: 14px; border: 1px solid var(--glass-border);
+background: var(--input-bg); color: var(--text); font-size: 0.9rem; outline: none;
+}
+.btn-add-doc { background: transparent; color: var(--primary); border: 1px dashed var(--primary); padding: 0.7rem; border-radius: 12px; width: 100%; cursor: pointer; font-weight: 500; font-size: 0.85rem; }
+
+.service-meta { margin-bottom: 1.5rem; }
+.service-meta h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+.price-tag { display: inline-block; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); padding: 0.4rem 1rem; border-radius: 20px; font-weight: 600; color: var(--primary); }
+
+.form-group { margin-bottom: 1rem; }
+.form-label { display: block; margin-bottom: 0.3rem; font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+
+.action-buttons-wrapper { display: flex; gap: 0.8rem; margin-top: auto; }
+.btn-submit-app {
+background: linear-gradient(135deg, var(--primary), #0284c7);
+color: #000; border: none; border-radius: 16px; padding: 1rem;
+font-size: 1rem; font-weight: 700; flex: 2; cursor: pointer;
+box-shadow: 0 10px 20px var(--primary-glow); transition: all 0.3s;
+}
+.btn-edit-app {
+background: var(--input-bg); color: var(--text); border: 1px solid var(--glass-border);
+border-radius: 16px; padding: 1rem; font-size: 0.9rem; font-weight: 600; flex: 1; cursor: pointer;
+}
+
+.success-card {
+background: var(--glass-bg); backdrop-filter: blur(35px); border: 1px solid var(--glass-border); border-radius: 32px;
+padding: 2.5rem 2rem; text-align: center; max-width: 460px; width: 100%;
+box-shadow: 0 0 50px var(--success-glow); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.success-icon-wrapper {
+width: 90px; height: 90px; background: var(--success); border-radius: 50%;
+margin: 0 auto 1.2rem; display: flex; align-items: center; justify-content: center;
+box-shadow: 0 0 30px var(--success-glow); animation: pulseGreen 2s infinite;
+}
+@keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+
+.checkmark { width: 44px; height: 44px; stroke: #000; stroke-width: 4; fill: none; stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawCheck 0.8s 0.3s forwards ease-in-out; }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+.success-card h3 { font-size: 1.6rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; }
+.success-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+.owner-banner {
+background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.15));
+border: 1px solid var(--warning); border-radius: 20px; padding: 1rem 1.5rem;
+margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+backdrop-filter: blur(25px);
+}
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+.stat-card { background: var(--glass-bg); backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 1.2rem; }
+.stat-card div { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+.stat-card h3 { font-size: 1.8rem; font-weight: 800; margin-top: 0.4rem; color: var(--primary); }
+
+.submissions-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+.sub-card {
+background: var(--glass-bg); backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 20px;
+padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; transition: all 0.2s;
+}
+.sub-card:hover { border-color: var(--primary); }
+@media(min-width: 640px) { .sub-card { flex-direction: row; align-items: center; justify-content: space-between; } }
+.sub-info h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.sub-info p { color: var(--text-muted); font-size: 0.85rem; }
+.sub-meta { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+.status-tag { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; background: rgba(56, 189, 248, 0.2); color: var(--primary); }
+
+.doc-file-link {
+background: rgba(56, 189, 248, 0.1); border: 1px solid var(--primary);
+color: var(--primary); padding: 0.3rem 0.8rem; border-radius: 10px;
+text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-block; margin-top: 0.3rem;
+}
+
+.owner-item-row {
+background: var(--input-bg); border: 1px solid var(--glass-border);
+border-radius: 16px; padding: 0.9rem 1.2rem; margin-bottom: 0.8rem;
+display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+}
+.owner-item-info { display: flex; flex-direction: column; }
+.owner-item-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+.owner-item-phone { font-size: 0.82rem; color: var(--text-muted); }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<canvas id="canvas-background"></canvas>
+<div class="canvas-backdrop"></div>
+
+<!-- LOGIN & BRANDING WITH OTP & OWNER AUTHENTICATION -->
+<div class="auth-overlay" id="authGateway">
+<div class="auth-header-display">MSN Communications</div>
+<div class="auth-card">
+<div class="logo" style="margin:0 auto 1rem; width:54px; height:54px; font-size:1.5rem;">M</div>
+<h2>Portal Login & Registration</h2>
+<p>Please enter your details and verify via OTP</p>
+<form class="auth-form" onsubmit="handleAuth(event)">
+<input type="text" id="loginName" class="form-input" placeholder="Full Name" required>
+<div style="display: flex; gap: 0.5rem;">
+<input type="tel" id="loginPhone" class="form-input" placeholder="Mobile Number (10 digits)" maxlength="10" required style="flex:1;">
+<button type="button" class="btn-nav btn-nav-primary" onclick="sendOtpCode()" id="sendOtpBtn" style="white-space:nowrap; padding:0 1rem; border-radius:14px;">Get OTP</button>
+</div>
+
+<div class="form-group" style="margin-bottom:0.2rem; text-align:left;">
+<label class="form-label">Enter 4-Digit OTP</label>
+<div class="otp-container">
+<input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric" oninput="moveToNext(this, 1)" required>
+<input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric" oninput="moveToNext(this, 2)" required>
+<input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric" oninput="moveToNext(this, 3)" required>
+<input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric" oninput="moveToNext(this, 4)" required>
+</div>
+<div id="otpHint" style="font-size:0.75rem; color:var(--primary); text-align:center; margin-top:0.3rem;"></div>
+</div>
+
+<div class="role-selection-wrapper">
+<span class="role-label-title">Select User Type</span>
+<div class="role-options">
+<label class="role-option">
+<input type="radio" name="userRole" value="Customer" checked> Customer
+</label>
+<label class="role-option">
+<input type="radio" name="userRole" value="Owner"> Owner
+</label>
+</div>
+</div>
+
+<button type="submit" class="auth-btn">Enter Portal</button>
+</form>
+</div>
+</div>
+
+<!-- HEADER NAVIGATION -->
+<header>
+<div class="brand">
+<div class="logo">M</div>
+<div>
+<div class="title">MSN Communications</div>
+<span id="roleIndicator" style="font-size: 0.75rem; color: var(--text-muted);">Customer Access</span>
+</div>
+</div>
+<div class="nav-controls">
+<div class="profile-container" id="userProfileHeader" style="display:none;">
+<div class="profile-avatar" id="avatarDisplay">U</div>
+<span class="profile-name" id="profileNameDisplay">User</span>
+</div>
+
+<span id="ownerBadge" class="badge-owner" style="display:none;">Owner Mode</span>
+
+<button class="btn-nav" onclick="switchUserAccount()" title="Switch User Account">
+<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle></svg>
+Switch User
+</button>
+
+<button class="btn-nav btn-nav-danger" onclick="logoutUser()" title="Logout">
+<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+Log Out
+</button>
+
+<button class="btn-nav" onclick="toggleTheme()" id="themeBtn">Light Mode</button>
+
+<button class="btn-nav btn-nav-warning" id="ownersBtnBox" style="display:none;" onclick="openOwnersManagementModal()">
+<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+Owners
+</button>
+</div>
+</header>
+
+<main>
+<!-- OWNER DASHBOARD CONTROL BANNER -->
+<div id="ownerControlBanner" class="owner-banner" style="display: none;">
+<div>
+<h3 style="color: var(--warning); font-weight: 700;" id="ownerBannerTitle">Super Admin Control Panel Active</h3>
+<p style="font-size: 0.85rem; color: var(--text-muted);" id="ownerBannerDesc">Full Super Admin permissions active: Add/Remove/Edit services, headings, and uploaded documents list.</p>
+</div>
+<div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+<button class="btn-nav btn-nav-primary" id="btnAddNewServiceBox" onclick="openAddCardModal()">+ Add New Service / Box</button>
+<button class="btn-nav btn-nav-warning" id="btnAddNewHeadingBox" onclick="openAddHeadingModal()" style="display:none;">+ Add Heading Box</button>
+<button class="btn-nav" onclick="toggleSubmissionsView()" id="toggleSubmissionsBtn">View Customer Submissions</button>
+</div>
+</div>
+
+<!-- STATS GRID -->
+<div id="ownerStatsGrid" class="stats-grid" style="display: none;">
+<div class="stat-card"><div>Total Submissions</div><h3 id="statTotal">0</h3></div>
+<div class="stat-card"><div>Total Catalog Items</div><h3 id="statCatalog">72</h3></div>
+<div class="stat-card"><div>Pending Submissions</div><h3 id="statPending">0</h3></div>
+</div>
+
+<!-- MAIN CATALOG GRID VIEW -->
+<div id="catalogView">
+<div class="toolbar">
+<div class="search-wrapper">
+<input type="text" id="searchInput" placeholder="Search for a service or document..." oninput="filterServices()">
+</div>
+<div class="tabs">
+<button class="tab active" onclick="setCategoryFilter('all')">All</button>
+<button class="tab" onclick="setCategoryFilter('meeseva')" id="tabMeeseva">MeeSeva Services (Add / Remove)</button>
+<button class="tab" onclick="setCategoryFilter('online')" id="tabOnline">Online Services (Add / Remove)</button>
+<button class="tab" onclick="setCategoryFilter('docs')" id="tabDocs">Upload Documents (Add / Remove)</button>
+</div>
+</div>
+
+<div id="headingToolbarContainer" class="heading-toolbar-container" style="display: none;">
+<div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+<span class="heading-box-label" id="headingToolbarTitle">Category Headings:</span>
+<div id="headingPillsList" class="heading-pills-wrapper"></div>
+</div>
+<button class="btn-nav btn-nav-primary" id="inlineAddHeadingBtn" onclick="openAddHeadingModal()" style="display:none; font-size:0.75rem; padding:0.3rem 0.7rem;">+ Add Heading</button>
+</div>
+
+<div class="grid" id="servicesGrid"></div>
+</div>
+
+<!-- OWNER CUSTOMER SUBMISSIONS VIEW -->
+<div id="ownerSubmissionsView" style="display: none;">
+<div class="toolbar">
+<h2 style="font-size: 1.3rem;">Customer Submissions & Filed Records</h2>
+<div style="display: flex; gap: 0.5rem;">
+<button class="btn-nav btn-nav-primary" onclick="openAddRecordModal()">+ Add Customer Record Box</button>
+<button class="btn-nav btn-nav-danger" onclick="clearAllSubmissionsData()">Clear All Submissions</button>
+</div>
+</div>
+<div class="submissions-list" id="ownerSubmissionsGrid"></div>
+</div>
+</main>
+
+<!-- SERVICE SUBMISSION MODAL -->
+<div class="modal-overlay" id="appModalOverlay" onclick="preventBackdropClose(event)">
+<div class="modal" id="appModal">
+<div class="modal-nav-header">
+<button class="btn-back-nav" onclick="closeModalDirectly()">
+<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+Back to Portal
+</button>
+<span style="font-size: 0.85rem; color: var(--text-muted);" id="modalStepIndicator">Fill Service Application</span>
+</div>
+
+<div class="modal-content-wrapper" id="modalContentWrapper">
+<div class="modal-left" id="modalLeftContainer">
+<div class="section-title">
+<span>Required Documents <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(Auto-sync active)</span></span>
+<button type="button" class="btn-owner-add" id="ownerAddReqDocBtn" style="display:none; width:auto; margin-top:0; padding:0.3rem 0.7rem; font-size:0.75rem;" onclick="addNewRequiredDocPrompt()">+ Add Document</button>
+</div>
+<div class="req-docs-list" id="modalReqDocsList"></div>
+
+<div class="custom-docs-area" id="customDocsAreaBox">
+<div class="section-title" style="font-size: 0.95rem; margin-bottom: 0.3rem;">Additional Documents</div>
+<p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.8rem;">Upload extra supporting documents if required.</p>
+<div id="customDocsContainer"></div>
+<button class="btn-add-doc" onclick="addCustomDocRow()" id="addDocBtn">+ Add Document Row</button>
+</div>
+
+<div class="section-title" id="notesTitleSection">Notes / Special Instructions</div>
+<textarea id="custNotes" class="textarea-notes" placeholder="Specify any additional requests or instructions..."></textarea>
+</div>
+
+<div class="modal-right" id="modalRightContainer">
+<div class="service-meta">
+<h2 id="modalServiceTitle">Service Name</h2>
+<div class="price-tag" id="modalServiceFee"></div>
+</div>
+
+<form id="customerForm">
+<input type="hidden" id="activeServiceId">
+<div class="form-group">
+<label class="form-label">Full Name</label>
+<input type="text" id="custName" class="form-input" required placeholder="Applicant's full name" oninput="autoSaveUserData()">
+</div>
+<div class="form-group">
+<label class="form-label">Phone Number (10 digits only)</label>
+<input type="tel" id="custPhone" class="form-input" required placeholder="10-digit mobile number" maxlength="10" oninput="autoSaveUserData()">
+</div>
+<div class="form-group">
+<label class="form-label">Email Address</label>
+<input type="email" id="custEmail" class="form-input" required placeholder="Email address" oninput="autoSaveUserData()">
+</div>
+<div class="form-group">
+<label class="form-label">Complete Address</label>
+<input type="text" id="custAddress" class="form-input" required placeholder="Full residential address" oninput="autoSaveUserData()">
+</div>
+</form>
+
+<div class="action-buttons-wrapper">
+<button type="button" class="btn-edit-app" onclick="resetFormToSaved()" title="Reset to auto-saved user details">Reset Details</button>
+<button type="button" class="btn-submit-app" onclick="submitApplicationDirectly()">Submit Application</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModalOverlay">
+<div class="success-card">
+<div class="success-icon-wrapper">
+<svg class="checkmark" viewBox="0 0 52 52">
+<path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+</svg>
+</div>
+<h3>Submission Successful!</h3>
+<p>Your details and documents have been processed and submitted to MSN Communications Dashboard.</p>
+<div style="display:flex; gap:0.8rem; justify-content:center;">
+<button class="auth-btn" style="flex:1;" onclick="reEditApplication()">Edit Details</button>
+<button class="auth-btn" style="flex:1; background: var(--success);" onclick="closeSuccessModal()">Done</button>
+</div>
+</div>
+</div>
+
+<!-- PRIMARY OWNER MANAGEMENT MODAL -->
+<div class="modal-overlay" id="ownersManagementModalOverlay">
+<div class="modal" style="max-width: 650px;">
+<div class="modal-nav-header">
+<button class="btn-back-nav" onclick="closeOwnersManagementModal()">Close</button>
+<span style="font-size: 0.85rem; color: var(--text-muted);">Owners & Loginers Management Panel</span>
+</div>
+<div style="padding: 2rem; overflow-y: auto;">
+<div style="margin-bottom: 2rem; background: rgba(56, 189, 248, 0.08); border: 1px solid var(--primary); border-radius: 20px; padding: 1.2rem;">
+<h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 0.4rem;">Add Loginer (New Secondary Owner)</h3>
+<p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Added loginers will have owner access to view submissions.</p>
+<form onsubmit="addNewLoginer(event)">
+<div class="form-group">
+<label class="form-label">Username</label>
+<input type="text" id="newLoginerName" class="form-input" required placeholder="Enter new owner's username">
+</div>
+<div class="form-group">
+<label class="form-label">Mobile Number (10 digits)</label>
+<input type="tel" id="newLoginerPhone" class="form-input" maxlength="10" required placeholder="Enter 10-digit mobile number">
+</div>
+<button type="submit" class="auth-btn" style="width: 100%; margin-top: 0.5rem;">Add Loginer</button>
+</form>
+</div>
+
+<div>
+<h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Authorized Owners & Loginers</h3>
+<div class="owner-item-row" style="border-color: var(--warning);">
+<div class="owner-item-info">
+<span class="owner-item-name">MANDAN ROHITH KUMAR <span style="font-size:0.75rem; color:var(--warning);">(Primary Owner)</span></span>
+<span class="owner-item-phone">Mobile: 8523888068</span>
+</div>
+<span style="font-size:0.75rem; font-weight:700; color:var(--warning); text-transform:uppercase;">Super Admin</span>
+</div>
+<div id="secondaryOwnersList"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- CATALOG CARD EDIT/ADD MODAL -->
+<div class="modal-overlay" id="ownerEditModalOverlay">
+<div class="modal" style="max-width: 550px;">
+<div class="modal-nav-header">
+<button class="btn-back-nav" onclick="closeOwnerEditModal()">Close</button>
+<span style="font-size: 0.85rem; color: var(--text-muted);" id="ownerEditModalTitle">Edit Catalog Box</span>
+</div>
+<div style="padding: 2rem; overflow-y: auto;">
+<form id="ownerCardForm" onsubmit="saveOwnerCard(event)">
+<input type="hidden" id="editCardId">
+<div class="form-group">
+<label class="form-label">Service / Document Name</label>
+<input type="text" id="editCardName" class="form-input" required placeholder="e.g. Police Verification">
+</div>
+<div class="form-group">
+<label class="form-label">Category</label>
+<select id="editCardCategory" class="form-input" style="background: var(--input-bg); color: var(--text);" onchange="populateHeadingSelect(this.value)">
+<option value="meeseva">MeeSeva Services</option>
+<option value="online">Online Services</option>
+<option value="docs">Upload Documents</option>
+</select>
+</div>
+<div class="form-group" id="headingGroupWrapper">
+<label class="form-label">Heading (Sub-section)</label>
+<div style="display: flex; gap: 0.5rem; align-items: center;">
+<select id="editCardHeading" class="form-input" style="background: var(--input-bg); color: var(--text); flex: 1;">
+</select>
+<button type="button" class="btn-nav btn-nav-primary" style="padding: 0.6rem 0.9rem; font-size: 0.8rem;" onclick="quickAddHeadingFromModal()">+ Add</button>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Fee (₹ Amount, leave blank for Docs)</label>
+<input type="number" id="editCardTier" class="form-input" placeholder="e.g. 180">
+</div>
+<div class="form-group">
+<label class="form-label">Required Documents (Comma separated)</label>
+<div style="display: flex; flex-direction: column; gap: 0.5rem;">
+<input type="text" id="editCardDocs" class="form-input" placeholder="Aadhaar Card, Passport Photo, Signature">
+<button type="button" class="btn-nav" style="align-self: flex-start; font-size: 0.78rem; padding: 0.3rem 0.7rem;" onclick="appendDocumentInput()">+ Add Document Field</button>
+</div>
+</div>
+<button type="submit" class="auth-btn" style="width: 100%; margin-top: 1rem;">Save Card Entry</button>
+</form>
+</div>
+</div>
+</div>
+
+<!-- HEADING ADD/EDIT MODAL -->
+<div class="modal-overlay" id="headingEditModalOverlay">
+<div class="modal" style="max-width: 480px;">
+<div class="modal-nav-header">
+<button class="btn-back-nav" onclick="closeHeadingModal()">Close</button>
+<span style="font-size: 0.85rem; color: var(--text-muted);" id="headingModalTitle">Add New Heading</span>
+</div>
+<div style="padding: 2rem; overflow-y: auto;">
+<form onsubmit="saveHeadingForm(event)">
+<input type="hidden" id="editHeadingOldName">
+<div class="form-group">
+<label class="form-label">Category for Heading</label>
+<select id="headingCatSelect" class="form-input" style="background: var(--input-bg); color: var(--text);">
+<option value="meeseva">MeeSeva Services</option>
+<option value="online">Online Services</option>
+</select>
+</div>
+<div class="form-group">
+<label class="form-label">Heading Name</label>
+<input type="text" id="headingNameInput" class="form-input" required placeholder="e.g. Certificates & Legal">
+</div>
+<button type="submit" class="auth-btn" style="width: 100%; margin-top: 1rem;">Save Heading</button>
+</form>
+</div>
+</div>
+</div>
+
+<!-- OWNER ADD CUSTOMER RECORD BOX MODAL -->
+<div class="modal-overlay" id="ownerRecordModalOverlay">
+<div class="modal" style="max-width: 550px;">
+<div class="modal-nav-header">
+<button class="btn-back-nav" onclick="closeOwnerRecordModal()">Close</button>
+<span style="font-size: 0.85rem; color: var(--text-muted);">Add New Customer Submission Box</span>
+</div>
+<div style="padding: 2rem; overflow-y: auto;">
+<form id="ownerRecordForm" onsubmit="saveOwnerRecord(event)">
+<div class="form-group">
+<label class="form-label">Customer Full Name</label>
+<input type="text" id="recCustName" class="form-input" required placeholder="Full Name">
+</div>
+<div class="form-group">
+<label class="form-label">Mobile Number (10 digits)</label>
+<input type="tel" id="recCustPhone" class="form-input" maxlength="10" required placeholder="10-digit number">
+</div>
+<div class="form-group">
+<label class="form-label">Email Address</label>
+<input type="email" id="recCustEmail" class="form-input" required placeholder="Email address">
+</div>
+<div class="form-group">
+<label class="form-label">Address</label>
+<input type="text" id="recCustAddress" class="form-input" required placeholder="Address">
+</div>
+<div class="form-group">
+<label class="form-label">Service / Document Requested</label>
+<input type="text" id="recServiceName" class="form-input" required placeholder="e.g. Police Verification">
+</div>
+<div class="form-group">
+<label class="form-label">Fee / Status Notes</label>
+<input type="text" id="recNotes" class="form-input" placeholder="e.g. Paid ₹180 / Pending Review">
+</div>
+<button type="submit" class="auth-btn" style="width: 100%; margin-top: 1rem;">Add Record Entry</button>
+</form>
+</div>
+</div>
+</div>
+
+<!-- OWNER INSPECTOR MODAL -->
+<div class="modal-overlay" id="ownerInspectorOverlay">
+<div class="modal" style="max-width: 700px;">
+<div class="modal-nav-header">
+<button class="btn-back-nav" onclick="closeInspector()">
+<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+Back to Dashboard
+</button>
+<span style="font-size: 0.85rem; color: var(--text-muted);">Inspection View</span>
+</div>
+<div style="padding: 2rem; overflow-y: auto;">
+<h2 id="inspServiceName" style="font-size: 1.5rem; margin-bottom: 0.3rem; color: var(--primary);">Service Details</h2>
+<p id="inspDate" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.2rem;"></p>
+
+<div style="background: var(--input-bg); border: 1px solid var(--glass-border); padding: 1.2rem; border-radius: 20px; margin-bottom: 1.5rem;">
+<h4 style="margin-bottom: 0.8rem; font-size: 0.95rem;">Customer Information</h4>
+<p style="font-size: 0.9rem; margin-bottom: 0.3rem;"><strong>Name:</strong> <span id="inspCustName"></span></p>
+<p style="font-size: 0.9rem; margin-bottom: 0.3rem;"><strong>Phone:</strong> <span id="inspCustPhone"></span></p>
+<p style="font-size: 0.9rem; margin-bottom: 0.3rem;"><strong>Email:</strong> <span id="inspCustEmail"></span></p>
+<p style="font-size: 0.9rem;"><strong>Address:</strong> <span id="inspCustAddress"></span></p>
+</div>
+
+<h4 style="margin-bottom: 0.8rem; font-size: 0.95rem;">Uploaded & Synced Documents</h4>
+<div id="inspDocsList" class="req-docs-list"></div>
+
+<div style="margin-top: 1rem;">
+<h4 style="margin-bottom: 0.4rem; font-size: 0.95rem;">Special Notes</h4>
+<p id="inspNotes" style="font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border);"></p>
+</div>
+
+<div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+<button class="btn-nav btn-nav-danger" style="flex:1;" id="btnDeleteSubmission" onclick="">Remove Submission</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+// THREE.JS SILVER PARTICLE TERRAIN BACKGROUND
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 18, 50);
+camera.lookAt(0, 8, -30);
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas-background'), antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const cols = 220;
+const rows = 220;
+const numParticles = cols * rows;
+const positions = new Float32Array(numParticles * 3);
+
+let pIdx = 0;
+const spacing = 1.1;
+for (let ix = 0; ix < cols; ix++) {
+for (let iy = 0; iy < rows; iy++) {
+positions[pIdx] = (ix - cols / 2) * spacing;
+positions[pIdx + 1] = 0;
+positions[pIdx + 2] = (iy - rows / 2) * spacing;
+pIdx += 3;
+}
+}
+
+const geometry = new THREE.BufferGeometry();
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+const material = new THREE.ShaderMaterial({
+uniforms: {
+uTime: { value: 0 },
+uColor1: { value: new THREE.Color(0xffffff) },
+uColor2: { value: new THREE.Color(0xb0c4de) }
+},
+vertexShader: `
+uniform float uTime;
+varying float vElevation;
+varying float vDist;
+void main() {
+vec3 pos = position;
+float wave1 = sin(pos.x * 0.08 + uTime * 1.5) * cos(pos.z * 0.06 + uTime * 1.2) * 5.0;
+float wave2 = sin(pos.x * 0.04 - uTime * 0.8) * 3.5;
+float wave3 = cos(pos.z * 0.09 + uTime * 1.1) * 2.5;
+pos.y = wave1 + wave2 + wave3;
+vElevation = pos.y;
+
+vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+vDist = -mvPosition.z;
+gl_PointSize = (120.0 / vDist) * (1.0 + (pos.y + 10.0) * 0.08);
+gl_Position = projectionMatrix * mvPosition;
+}
+`,
+fragmentShader: `
+uniform vec3 uColor1;
+uniform vec3 uColor2;
+varying float vElevation;
+varying float vDist;
+void main() {
+float dist = length(gl_PointCoord - vec2(0.5));
+if (dist > 0.5) discard;
+float alpha = smoothstep(0.5, 0.0, dist);
+
+float t = clamp((vElevation + 6.0) / 14.0, 0.0, 1.0);
+vec3 color = mix(uColor2 * 0.6, uColor1, t);
+
+float fog = clamp((120.0 - vDist) / 100.0, 0.0, 1.0);
+gl_FragColor = vec4(color, alpha * fog * 0.95);
+}
+`,
+transparent: true,
+blending: THREE.AdditiveBlending,
+depthWrite: false
+});
+
+const particles = new THREE.Points(geometry, material);
+scene.add(particles);
+
+let clock = new THREE.Clock();
+function animateTerrain() {
+requestAnimationFrame(animateTerrain);
+const elapsedTime = clock.getElapsedTime();
+material.uniforms.uTime.value = elapsedTime;
+renderer.render(scene, camera);
+}
+animateTerrain();
+
+window.addEventListener('resize', () => {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// MSN COMMUNICATIONS PORTAL LOGIC
+const PRIMARY_OWNER = {
+name: "MANDAN ROHITH KUMAR",
+phone: "8523888068"
+};
+
+const initialHeadings = {
+meeseva: ["General Certificates", "Identity & Verification"],
+online: ["Government ID & Cards", "Admissions & Scholarships", "General Applications", "Welfare Schemes"]
+};
+
+const initialServices = [
+{ id: 1, category: "meeseva", heading: "Identity & Verification", tier: 180, name: "Police Verification", docs: ["Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 2, category: "meeseva", heading: "General Certificates", tier: 80, name: "Ration Card", docs: ["Aadhaar Cards of Family Members", "Gas Bill", "Passport Photo", "Signature"] },
+{ id: 3, category: "meeseva", heading: "General Certificates", tier: 80, name: "Ration Card Correction", docs: ["Ration Card Copy", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 4, category: "meeseva", heading: "General Certificates", tier: 130, name: "Death Certificate", docs: ["Hospital Death Summary", "Deceased Aadhaar", "Applicant ID", "Passport Photo", "Signature"] },
+{ id: 5, category: "meeseva", heading: "General Certificates", tier: 130, name: "Birth Certificate", docs: ["Hospital Birth Discharge Slip", "Parents Aadhaar Cards", "Passport Photo", "Signature"] },
+{ id: 6, category: "meeseva", heading: "Identity & Verification", tier: 180, name: "Missing Document FIR", docs: ["Aadhaar Card", "Lost Document Details", "Passport Photo", "Signature"] },
+{ id: 7, category: "online", heading: "Welfare Schemes", tier: 200, name: "Kalyana Lakshmi / Shaadi Mubarak", docs: ["Bride/Groom Aadhaar", "Marriage Card", "Income Proof", "Passport Photo", "Signature"] },
+{ id: 8, category: "meeseva", heading: "General Certificates", tier: 80, name: "Income Certificate", docs: ["Aadhaar Card", "Salary Certificate / Tax Return", "Passport Photo", "Signature"] },
+{ id: 9, category: "meeseva", heading: "General Certificates", tier: 80, name: "Caste Certificate", docs: ["Aadhaar Card", "Ration Card / Old Caste Certificate", "Passport Photo", "Signature"] },
+{ id: 10, category: "meeseva", heading: "General Certificates", tier: 80, name: "Non-Creamy Layer (NCL) Certificate", docs: ["Aadhaar Card", "Income Proof", "Passport Photo", "Signature"] },
+{ id: 11, category: "meeseva", heading: "General Certificates", tier: 80, name: "EWS Certificate", docs: ["Aadhaar Card", "Income & Asset Certificate", "Passport Photo", "Signature"] },
+{ id: 12, category: "meeseva", heading: "General Certificates", tier: 80, name: "OBC Certificate", docs: ["Aadhaar Card", "Caste Proof", "Passport Photo", "Signature"] },
+{ id: 13, category: "meeseva", heading: "General Certificates", tier: 80, name: "Agriculture Income Certificate", docs: ["Pattadar Passbook", "Aadhaar Card", "Passport Photo", "Signature"] },
+
+{ id: 14, category: "online", heading: "Government ID & Cards", tier: 80, name: "New Food / Ration Card", docs: ["Aadhaar Cards of Family Members", "Address Proof", "Passport Photo", "Signature"] },
+{ id: 15, category: "online", heading: "Government ID & Cards", tier: 100, name: "e-SHRAM Card", docs: ["Aadhaar Card", "Bank Account Details", "Passport Photo", "Signature"] },
+{ id: 16, category: "online", heading: "General Applications", tier: 50, name: "Farmer Registration", docs: ["Pattadar Passbook / Land Document", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 17, category: "online", heading: "Government ID & Cards", tier: 100, name: "Voter ID Address Update", docs: ["Aadhaar Card", "New Address Proof", "Passport Photo", "Signature"] },
+{ id: 18, category: "online", heading: "Government ID & Cards", tier: 150, name: "Aadhaar Address Change", docs: ["Aadhaar Card", "Address Proof Document", "Passport Photo", "Signature"] },
+{ id: 19, category: "online", heading: "Government ID & Cards", tier: 50, name: "Voter Link Verification", docs: ["Voter Card", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 20, category: "online", heading: "Government ID & Cards", tier: 300, name: "PAN Card Application", docs: ["Aadhaar Card", "DOB Proof", "Passport Photo", "Signature"] },
+{ id: 21, category: "online", heading: "Government ID & Cards", tier: 300, name: "PAN Card Correction", docs: ["Aadhaar Card", "Correction Proof", "Passport Photo", "Signature"] },
+{ id: 22, category: "online", heading: "Government ID & Cards", tier: 3000, name: "Passport Application", docs: ["Aadhaar Card", "SSC Marks Memo / DOB Proof", "Passport Photo", "Signature"] },
+{ id: 23, category: "online", heading: "General Applications", tier: 100, name: "Bus Pass Application", docs: ["Student/Employee ID", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 24, category: "online", heading: "General Applications", tier: 150, name: "PF Withdrawal", docs: ["UAN Number", "Aadhaar Card", "Bank Passbook", "Passport Photo", "Signature"] },
+{ id: 25, category: "online", heading: "Government ID & Cards", tier: 150, name: "ABHA Health Card", docs: ["Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 26, category: "online", heading: "General Applications", tier: 400, name: "Marriage Certificate", docs: ["Marriage Card", "Photos", "Aadhaar of Both Parties", "Passport Photo", "Signature"] },
+{ id: 27, category: "online", heading: "General Applications", tier: 200, name: "Employment Registration", docs: ["Qualification Certificates", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 28, category: "online", heading: "General Applications", tier: 100, name: "Gas Connection Service", docs: ["Aadhaar Card", "Address Proof", "Passport Photo", "Signature"] },
+{ id: 29, category: "online", heading: "Admissions & Scholarships", tier: 500, name: "Online DOST Registration", docs: ["Aadhaar Card", "Registration ID", "Passport Photo", "Signature"] },
+{ id: 30, category: "online", heading: "Admissions & Scholarships", tier: 200, name: "ITI Admission", docs: ["SSC Marks Memo", "Transfer Certificate", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 31, category: "online", heading: "Admissions & Scholarships", tier: 200, name: "National Scholarship Portal (NSP)", docs: ["Aadhaar Card", "Income Certificate", "Marks Sheet", "Passport Photo", "Signature"] },
+{ id: 32, category: "online", heading: "General Applications", tier: 100, name: "PM-KISAN Registration", docs: ["Pattadar Passbook / Land 1-B", "Aadhaar Card", "Bank Account", "Passport Photo", "Signature"] },
+{ id: 33, category: "online", heading: "Admissions & Scholarships", tier: 500, name: "TG-DOST Admissions", docs: ["Intermediate Marks Memo", "Aadhaar Card", "Passport Photo", "Signature"] },
+{ id: 34, category: "online", heading: "Admissions & Scholarships", tier: 200, name: "Scholarship (Fresh / Renewal)", docs: ["Income Certificate", "Caste Certificate", "Marks Memo", "Aadhaar Card", "Passport Photo", "Signature"] },
+
+{ id: 35, category: "docs", heading: "Upload Documents", name: "Aadhaar Card Upload", docs: ["Aadhaar Card Document"] },
+{ id: 36, category: "docs", heading: "Upload Documents", name: "PAN Card Upload", docs: ["PAN Card Document"] },
+{ id: 37, category: "docs", heading: "Upload Documents", name: "Driving Licence Upload", docs: ["Driving Licence Document"] },
+{ id: 38, category: "docs", heading: "Upload Documents", name: "Vehicle Registration Certificate (RC)", docs: ["RC Document"] },
+{ id: 39, category: "docs", heading: "Upload Documents", name: "Class X Marksheet", docs: ["Class X Marksheet Copy"] },
+{ id: 40, category: "docs", heading: "Upload Documents", name: "Class XII Marksheet", docs: ["Class XII Marksheet Copy"] },
+{ id: 41, category: "docs", heading: "Upload Documents", name: "Passport Document", docs: ["Passport Copy"] },
+{ id: 42, category: "docs", heading: "Upload Documents", name: "Voter ID Card", docs: ["Voter ID Document"] },
+{ id: 43, category: "docs", heading: "Upload Documents", name: "Health ID Card (ABHA / PM-JAY)", docs: ["Health ID Card"] },
+{ id: 44, category: "docs", heading: "Upload Documents", name: "School Bonafide Certificate", docs: ["School Bonafide Certificate"] },
+{ id: 45, category: "docs", heading: "Upload Documents", name: "Passport Size Photograph", docs: ["Passport Size Photograph"] },
+{ id: 46, category: "docs", heading: "Upload Documents", name: "Scanned Signature", docs: ["Scanned Signature File"] },
+{ id: 47, category: "docs", heading: "Upload Documents", name: "Ration Card Copy", docs: ["Ration Card Document"] },
+{ id: 48, category: "docs", heading: "Upload Documents", name: "Birth Certificate Copy", docs: ["Birth Certificate File"] },
+{ id: 49, category: "docs", heading: "Upload Documents", name: "Death Certificate Copy", docs: ["Death Certificate File"] },
+{ id: 50, category: "docs", heading: "Upload Documents", name: "University Degree Certificate", docs: ["Degree Certificate Copy"] },
+{ id: 51, category: "docs", heading: "Upload Documents", name: "Diploma Certificate", docs: ["Diploma Certificate Copy"] },
+{ id: 52, category: "docs", heading: "Upload Documents", name: "Graduation Marksheet", docs: ["Graduation Marksheet Copy"] },
+{ id: 53, category: "docs", heading: "Upload Documents", name: "Skill Development Certificate", docs: ["Skill Certificate Copy"] },
+{ id: 54, category: "docs", heading: "Upload Documents", name: "Vehicle Insurance Policy", docs: ["Insurance Policy Copy"] },
+{ id: 55, category: "docs", heading: "Upload Documents", name: "Pollution Under Control (PUC)", docs: ["PUC Certificate Copy"] },
+{ id: 56, category: "docs", heading: "Upload Documents", name: "Life Insurance Policy Document", docs: ["LIC Policy Document"] },
+{ id: 57, category: "docs", heading: "Upload Documents", name: "Income Certificate Copy", docs: ["Income Certificate File"] },
+{ id: 58, category: "docs", heading: "Upload Documents", name: "Caste Certificate Copy", docs: ["Caste Certificate File"] },
+{ id: 59, category: "docs", heading: "Upload Documents", name: "Domicile Certificate", docs: ["Domicile Certificate Copy"] },
+{ id: 60, category: "docs", heading: "Upload Documents", name: "Medical Test Reports", docs: ["Medical Report Document"] },
+{ id: 61, category: "docs", heading: "Upload Documents", name: "Appointment Letters", docs: ["Appointment Letter Document"] },
+{ id: 62, category: "docs", heading: "Upload Documents", name: "Salary Slips", docs: ["Salary Slip Copy"] },
+{ id: 63, category: "docs", heading: "Upload Documents", name: "Service Certificates", docs: ["Service Certificate Document"] },
+{ id: 64, category: "docs", heading: "Upload Documents", name: "Property Tax Receipts", docs: ["Tax Receipt Copy"] },
+{ id: 65, category: "docs", heading: "Upload Documents", name: "Incorporation Documents", docs: ["Incorporation Document"] },
+{ id: 66, category: "docs", heading: "Upload Documents", name: "Intellectual Property Certificates", docs: ["IP Certificate Document"] },
+{ id: 67, category: "docs", heading: "Upload Documents", name: "Academic Bank of Credits (ABC) ID Card", docs: ["ABC ID Card Copy"] },
+{ id: 68, category: "docs", heading: "Upload Documents", name: "Admit Cards (JEE, NEET, CBSE)", docs: ["Admit Card Document"] },
+{ id: 69, category: "docs", heading: "Upload Documents", name: "Character Certificate", docs: ["Character Certificate Document"] },
+{ id: 70, category: "docs", heading: "Upload Documents", name: "Transfer Certificate (TC)", docs: ["TC / Migration Certificate"] },
+{ id: 71, category: "docs", heading: "Upload Documents", name: "Bank Passbook Copy", docs: ["Bank Passbook Document"] },
+{ id: 72, category: "docs", heading: "Upload Documents", name: "Electricity / Utility Bill", docs: ["Utility Bill Copy"] }
+];
+
+let services = [];
+let categoryHeadings = {};
+let currentUser = null;
+let currentCategory = 'all';
+let currentHeading = 'all';
+let customDocCount = 0;
+const MAX_CUSTOM_DOCS = 5;
+let lastActiveSubmissionId = null;
+let showingOwnerSubmissions = false;
+let generatedOtpCode = null;
+
+function isValid10DigitMobile(phoneStr) {
+const cleanStr = phoneStr.trim().replace(/\D/g, '');
+return cleanStr.length === 10;
+}
+
+function sendOtpCode() {
+const phoneInput = document.getElementById('loginPhone').value.trim();
+if (!isValid10DigitMobile(phoneInput)) {
+alert("Please enter a valid 10-digit mobile number before requesting OTP.");
+return;
+}
+generatedOtpCode = Math.floor(1000 + Math.random() * 9000).toString();
+document.getElementById('otpHint').textContent = `[Demo OTP Sent]: ${generatedOtpCode}`;
+alert(`OTP sent successfully to ${phoneInput}.\n(Demo OTP: ${generatedOtpCode})`);
+}
+
+function moveToNext(current, boxIndex) {
+if (current.value.length === 1) {
+const nextBox = document.querySelectorAll('.otp-box')[boxIndex];
+if (nextBox) nextBox.focus();
+}
+}
+
+function loadCatalog() {
+const stored = localStorage.getItem('msn_catalog');
+if (stored) {
+services = JSON.parse(stored);
+} else {
+services = [...initialServices];
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+}
+
+const storedHeadings = localStorage.getItem('msn_category_headings');
+if (storedHeadings) {
+categoryHeadings = JSON.parse(storedHeadings);
+} else {
+categoryHeadings = JSON.parse(JSON.stringify(initialHeadings));
+localStorage.setItem('msn_category_headings', JSON.stringify(categoryHeadings));
+}
+}
+
+function getSecondaryOwners() {
+return JSON.parse(localStorage.getItem('msn_secondary_owners') || '[]');
+}
+
+function handleAuth(e) {
+e.preventDefault();
+const nameInput = document.getElementById('loginName').value.trim();
+const phoneInput = document.getElementById('loginPhone').value.trim();
+const selectedRole = document.querySelector('input[name="userRole"]:checked').value;
+
+if (!nameInput || !phoneInput) {
+alert("Please provide both Full Name and Mobile Number.");
+return;
+}
+
+if (!isValid10DigitMobile(phoneInput)) {
+alert("Invalid mobile number!\nMobile number must be exactly 10 digits.");
+return;
+}
+
+const otpBoxes = document.querySelectorAll('.otp-box');
+let enteredOtp = '';
+otpBoxes.forEach(box => enteredOtp += box.value.trim());
+
+if (enteredOtp.length !== 4) {
+alert("Please enter the complete 4-digit OTP.");
+return;
+}
+
+if (generatedOtpCode && enteredOtp !== generatedOtpCode) {
+alert("Invalid OTP! Please enter the correct code sent to your phone.");
+return;
+}
+
+let isPrimaryOwner = false;
+let isSecondaryOwner = false;
+
+if (selectedRole === 'Owner') {
+if (nameInput === PRIMARY_OWNER.name && phoneInput === PRIMARY_OWNER.phone) {
+isPrimaryOwner = true;
+} else {
+const secondaryList = getSecondaryOwners();
+const foundLoginer = secondaryList.find(o => o.name.toLowerCase() === nameInput.toLowerCase() && o.phone === phoneInput);
+if (foundLoginer) {
+isSecondaryOwner = true;
+} else {
+alert("ACCESS DENIED!\nUnauthorized Owner Credentials.\n\nOnly MANDAN ROHITH KUMAR or authorized loginers can log in as Owner.");
+return;
+}
+}
+}
+
+const isOwner = (selectedRole === 'Owner');
+currentUser = {
+name: nameInput,
+phone: phoneInput,
+role: isOwner ? 'Owner' : 'Customer',
+isOwner: isOwner,
+isPrimaryOwner: isPrimaryOwner,
+isSecondaryOwner: isSecondaryOwner
+};
+
+localStorage.setItem('msn_user', JSON.stringify(currentUser));
+document.getElementById('authGateway').style.display = 'none';
+initApp();
+}
+
+function switchUserAccount() {
+document.getElementById('authGateway').style.display = 'flex';
+document.getElementById('loginName').value = '';
+document.getElementById('loginPhone').value = '';
+document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+document.getElementById('otpHint').textContent = '';
+}
+
+function logoutUser() {
+if (confirm("Are you sure you want to log out of MSN Communications?")) {
+localStorage.removeItem('msn_user');
+currentUser = null;
+document.getElementById('authGateway').style.display = 'flex';
+}
+}
+
+function initApp() {
+loadCatalog();
+if (!currentUser) return;
+
+const isOwner = currentUser.isOwner;
+const isPrimary = currentUser.isPrimaryOwner;
+
+document.getElementById('roleIndicator').textContent = isPrimary ? "Super Admin (Primary Owner)" : (isOwner ? "Owner Mode" : "Customer Access");
+document.getElementById('ownerBadge').style.display = isOwner ? "inline-block" : "none";
+document.getElementById('ownerControlBanner').style.display = isOwner ? "flex" : "none";
+document.getElementById('ownerStatsGrid').style.display = isOwner ? "grid" : "none";
+
+document.getElementById('btnAddNewServiceBox').style.display = isOwner ? "inline-block" : "none";
+document.getElementById('btnAddNewHeadingBox').style.display = isOwner ? "inline-block" : "none";
+document.getElementById('inlineAddHeadingBtn').style.display = isOwner ? "inline-block" : "none";
+document.getElementById('ownerAddReqDocBtn').style.display = isOwner ? "inline-block" : "none";
+
+const ownersBtnBox = document.getElementById('ownersBtnBox');
+if (isPrimary) {
+ownersBtnBox.style.display = "flex";
+} else {
+ownersBtnBox.style.display = "none";
+}
+
+const profileHeader = document.getElementById('userProfileHeader');
+const avatarDisplay = document.getElementById('avatarDisplay');
+const profileNameDisplay = document.getElementById('profileNameDisplay');
+
+profileHeader.style.display = 'flex';
+avatarDisplay.textContent = currentUser.name.charAt(0).toUpperCase();
+profileNameDisplay.textContent = currentUser.name;
+
+if (isOwner) {
+updateOwnerStats();
+}
+
+updateTabCounts();
+filterServices();
+}
+
+function updateOwnerStats() {
+const orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+document.getElementById('statTotal').textContent = orders.length;
+document.getElementById('statCatalog').textContent = services.length;
+document.getElementById('statPending').textContent = orders.filter(o => o.status === 'Pending').length;
+}
+
+function updateTabCounts() {
+const meesevaCount = services.filter(s => s.category === 'meeseva').length;
+const onlineCount = services.filter(s => s.category === 'online').length;
+const docsCount = services.filter(s => s.category === 'docs').length;
+
+document.getElementById('tabMeeseva').textContent = `MeeSeva Services (${meesevaCount}) (Add / Remove)`;
+document.getElementById('tabOnline').textContent = `Online Services (${onlineCount}) (Add / Remove)`;
+document.getElementById('tabDocs').textContent = `Upload Documents (${docsCount}) (Add / Remove)`;
+}
+
+function toggleTheme() {
+const html = document.documentElement;
+const btn = document.getElementById('themeBtn');
+const isDark = html.getAttribute('data-theme') === 'dark';
+html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+btn.textContent = isDark ? 'Dark Mode' : 'Light Mode';
+}
+
+function getCategoryBadge(cat) {
+if (cat === 'meeseva') return 'MeeSeva';
+if (cat === 'online') return 'Online';
+return 'Upload Documents';
+}
+
+function renderServices(items) {
+const grid = document.getElementById('servicesGrid');
+const isOwner = currentUser && currentUser.isOwner;
+
+let htmlContent = '';
+
+if (isOwner) {
+htmlContent += `
+<div class="card card-add-box" onclick="openAddCardModal()" title="Click to add new service or document box">
+<div class="add-box-content">
+<div class="add-box-icon">+</div>
+<div class="add-box-text">Add Upload Documents & Services Box</div>
+</div>
+</div>
+`;
+}
+
+if (items.length === 0 && !isOwner) {
+grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:3rem; color:var(--text-muted);">No services found.</div>`;
+return;
+}
+
+htmlContent += items.map(s => `
+<div class="card" onclick="openModal(${s.id})">
+<div>
+<div class="type-badge">${getCategoryBadge(s.category)} ${s.heading ? '• ' + s.heading : ''}</div>
+<div class="card-header">
+<div class="card-title">${s.name}</div>
+${s.tier ? `<div class="tier-badge">₹${s.tier}</div>` : ''}
+</div>
+<div class="card-docs">Requires: ${s.docs.join(', ')}</div>
+</div>
+${isOwner ? `
+<div class="owner-card-actions">
+<button class="btn-owner-edit" onclick="event.stopPropagation(); openEditCardModal(${s.id})">Edit</button>
+<button class="btn-owner-change" onclick="event.stopPropagation(); openEditCardModal(${s.id})">Change</button>
+<button class="btn-owner-delete" onclick="event.stopPropagation(); deleteCard(${s.id})">Remove</button>
+</div>
+` : ''}
+</div>
+`).join('');
+
+grid.innerHTML = htmlContent;
+}
+
+function setCategoryFilter(category) {
+currentCategory = category;
+currentHeading = 'all';
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+event.target.classList.add('active');
+
+const headingContainer = document.getElementById('headingToolbarContainer');
+if (category === 'meeseva' || category === 'online') {
+headingContainer.style.display = 'flex';
+document.getElementById('headingToolbarTitle').textContent = `${category === 'meeseva' ? 'MeeSeva' : 'Online'} Headings:`;
+renderHeadingPills(category);
+} else {
+headingContainer.style.display = 'none';
+}
+
+filterServices();
+}
+
+function renderHeadingPills(category) {
+const container = document.getElementById('headingPillsList');
+const headings = categoryHeadings[category] || [];
+const isOwner = currentUser && currentUser.isOwner;
+
+let pillsHtml = `
+<button class="heading-pill ${currentHeading === 'all' ? 'active' : ''}" onclick="filterByHeading('all')">All Headings</button>
+`;
+
+pillsHtml += headings.map(h => `
+<div class="heading-pill-group">
+<button class="heading-pill ${currentHeading === h ? 'active' : ''}" onclick="filterByHeading('${h}')">${h}</button>
+${isOwner ? `
+<button class="heading-pill-edit" onclick="openEditHeadingModal('${category}', '${h}')" title="Edit Heading">Edit</button>
+<button class="heading-pill-delete" onclick="deleteHeading('${category}', '${h}')" title="Remove Heading">&times;</button>
+` : ''}
+</div>
+`).join('');
+
+container.innerHTML = pillsHtml;
+}
+
+function filterByHeading(heading) {
+currentHeading = heading;
+renderHeadingPills(currentCategory);
+filterServices();
+}
+
+function filterServices() {
+const term = document.getElementById('searchInput').value.toLowerCase();
+const filtered = services.filter(s => {
+const matchSearch = s.name.toLowerCase().includes(term) || s.docs.some(d => d.toLowerCase().includes(term));
+const matchCategory = currentCategory === 'all' || s.category === currentCategory;
+const matchHeading = currentHeading === 'all' || s.heading === currentHeading;
+return matchSearch && matchCategory && matchHeading;
+});
+renderServices(filtered);
+}
+
+function getSavedUserDocuments() {
+return JSON.parse(localStorage.getItem('msn_saved_documents') || '{}');
+}
+
+function saveUserDocument(docName, fileName, fileData) {
+let saved = getSavedUserDocuments();
+saved[docName] = { fileName, fileData, timestamp: new Date().toISOString() };
+localStorage.setItem('msn_saved_documents', JSON.stringify(saved));
+}
+
+function autoSaveUserData() {
+if (!currentUser) return;
+const userProfile = {
+name: document.getElementById('custName').value,
+phone: document.getElementById('custPhone').value,
+email: document.getElementById('custEmail').value,
+address: document.getElementById('custAddress').value
+};
+localStorage.setItem('msn_saved_profile', JSON.stringify(userProfile));
+}
+
+function resetFormToSaved() {
+const savedProfile = JSON.parse(localStorage.getItem('msn_saved_profile') || '{}');
+document.getElementById('custName').value = savedProfile.name || (currentUser ? currentUser.name : '');
+document.getElementById('custPhone').value = savedProfile.phone || (currentUser ? currentUser.phone : '');
+document.getElementById('custEmail').value = savedProfile.email || '';
+document.getElementById('custAddress').value = savedProfile.address || '';
+document.getElementById('custNotes').value = '';
+}
+
+function updateFileName(inputElement, docName) {
+const span = inputElement.previousElementSibling;
+if (inputElement.files && inputElement.files[0]) {
+const file = inputElement.files[0];
+span.textContent = "Uploaded";
+span.style.color = "#4ade80";
+
+readFileAsDataURL(file).then(dataUrl => {
+if (docName) {
+saveUserDocument(docName, file.name, dataUrl);
+}
+});
+}
+}
+
+function openModal(id) {
+const service = services.find(s => s.id === id);
+if (!service) return;
+
+document.getElementById('modalServiceTitle').textContent = service.name;
+const priceTag = document.getElementById('modalServiceFee');
+
+if (service.tier) {
+priceTag.style.display = 'inline-block';
+priceTag.textContent = `₹${service.tier}`;
+} else {
+priceTag.style.display = 'none';
+}
+
+document.getElementById('activeServiceId').value = service.id;
+
+const rightContainer = document.getElementById('modalRightContainer');
+const leftContainer = document.getElementById('modalLeftContainer');
+const modalWrapper = document.getElementById('modalContentWrapper');
+
+if (service.category === 'docs') {
+rightContainer.style.display = 'none';
+leftContainer.style.flex = '1';
+modalWrapper.style.flexDirection = 'column';
+} else {
+rightContainer.style.display = 'flex';
+leftContainer.style.flex = '1';
+modalWrapper.style.flexDirection = '';
+}
+
+const savedProfile = JSON.parse(localStorage.getItem('msn_saved_profile') || '{}');
+document.getElementById('custName').value = savedProfile.name || (currentUser ? currentUser.name : '');
+document.getElementById('custPhone').value = savedProfile.phone || (currentUser ? currentUser.phone : '');
+document.getElementById('custEmail').value = savedProfile.email || '';
+document.getElementById('custAddress').value = savedProfile.address || '';
+
+renderModalReqDocs(service);
+
+document.getElementById('custNotes').value = '';
+document.getElementById('customDocsContainer').innerHTML = '';
+customDocCount = 0;
+document.getElementById('addDocBtn').style.display = 'block';
+
+document.getElementById('appModalOverlay').classList.add('active');
+document.body.style.overflow = 'hidden';
+}
+
+function renderModalReqDocs(service) {
+const savedDocs = getSavedUserDocuments();
+const reqDocsContainer = document.getElementById('modalReqDocsList');
+const isOwner = currentUser && currentUser.isOwner;
+
+reqDocsContainer.innerHTML = service.docs.map((doc, index) => {
+const hasSaved = savedDocs[doc];
+return `
+<div class="req-doc-item">
+<div>
+<span class="req-doc-name req-doc-label">${doc}</span>
+${hasSaved ? `<span class="auto-synced-badge">Auto-Synced</span>` : ''}
+</div>
+<div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+<label class="file-upload-btn">
+<span style="${hasSaved ? 'color:#4ade80;' : ''}">${hasSaved ? 'Synced' : 'Upload'}</span>
+<input type="file" class="req-doc-input" data-doc-name="${doc}" onchange="updateFileName(this, '${doc}')">
+</label>
+${isOwner ? `
+<button type="button" class="btn-owner-edit" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="editRequiredDoc(${service.id}, ${index})">Edit</button>
+<button type="button" class="btn-owner-delete" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="removeRequiredDoc(${service.id}, ${index})">Remove</button>
+` : ''}
+</div>
+</div>
+`;
+}).join('');
+}
+
+function addNewRequiredDocPrompt() {
+const serviceId = parseInt(document.getElementById('activeServiceId').value);
+const service = services.find(s => s.id === serviceId);
+if (!service) return;
+
+const newDocName = prompt("Enter name for the new required document:");
+if (!newDocName || !newDocName.trim()) return;
+
+service.docs.push(newDocName.trim());
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+renderModalReqDocs(service);
+filterServices();
+}
+
+function editRequiredDoc(serviceId, docIndex) {
+const service = services.find(s => s.id === serviceId);
+if (!service) return;
+
+const currentName = service.docs[docIndex];
+const updatedName = prompt("Edit required document name:", currentName);
+if (!updatedName || !updatedName.trim()) return;
+
+service.docs[docIndex] = updatedName.trim();
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+renderModalReqDocs(service);
+filterServices();
+}
+
+function removeRequiredDoc(serviceId, docIndex) {
+const service = services.find(s => s.id === serviceId);
+if (!service) return;
+
+if (confirm(`Are you sure you want to remove "${service.docs[docIndex]}" from required documents?`)) {
+service.docs.splice(docIndex, 1);
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+renderModalReqDocs(service);
+filterServices();
+}
+}
+
+function preventBackdropClose(e) {
+if (e.target.id === 'appModalOverlay') { }
+}
+
+function closeModalDirectly() {
+document.getElementById('appModalOverlay').classList.remove('active');
+document.body.style.overflow = '';
+}
+
+function addCustomDocRow() {
+if (customDocCount >= MAX_CUSTOM_DOCS) return;
+
+const container = document.getElementById('customDocsContainer');
+const rowId = `c_doc_${Date.now()}`;
+
+const row = document.createElement('div');
+row.className = 'custom-doc-row';
+row.id = rowId;
+row.innerHTML = `
+<input type="text" class="doc-input custom-doc-name" placeholder="Document Name">
+<label class="file-upload-btn" style="display:flex;align-items:center;padding:0 0.8rem;">
+<span>Select</span>
+<input type="file" class="custom-doc-file" onchange="updateFileName(this, null)">
+</label>
+<button type="button" class="btn-back-nav" style="padding:0.4rem 0.6rem; border-radius:12px;" onclick="document.getElementById('${rowId}').remove(); customDocCount--; document.getElementById('addDocBtn').style.display='block';">&times;</button>
+`;
+
+container.appendChild(row);
+customDocCount++;
+
+if (customDocCount >= MAX_CUSTOM_DOCS) {
+document.getElementById('addDocBtn').style.display = 'none';
+}
+}
+
+function readFileAsDataURL(file) {
+return new Promise((resolve) => {
+const reader = new FileReader();
+reader.onload = () => resolve(reader.result);
+reader.onerror = () => resolve(null);
+reader.readAsDataURL(file);
+});
+}
+
+async function submitApplicationDirectly() {
+const serviceId = parseInt(document.getElementById('activeServiceId').value);
+const service = services.find(s => s.id === serviceId);
+
+let name = "Document Upload User";
+let phone = "0000000000";
+let email = "docupload@msn.com";
+let address = "N/A";
+let notes = "";
+
+if (service.category !== 'docs') {
+name = document.getElementById('custName').value.trim();
+phone = document.getElementById('custPhone').value.trim();
+email = document.getElementById('custEmail').value.trim();
+address = document.getElementById('custAddress').value.trim();
+notes = document.getElementById('custNotes').value.trim();
+
+if (!name || !phone || !email || !address) {
+alert('Please complete all contact details (Full Name, Mobile Number, Email, Address).');
+return;
+}
+
+if (!isValid10DigitMobile(phone)) {
+alert('Invalid mobile number! Mobile number must be exactly 10 digits.');
+return;
+}
+autoSaveUserData();
+}
+
+const savedDocs = getSavedUserDocuments();
+
+const reqDocsItems = document.querySelectorAll('.req-doc-item');
+const docPromises = Array.from(reqDocsItems).map(async item => {
+const label = item.querySelector('.req-doc-label').textContent;
+const fileInput = item.querySelector('.req-doc-input');
+let fileData = null;
+let fileName = null;
+
+if (fileInput && fileInput.files && fileInput.files[0]) {
+fileName = fileInput.files[0].name;
+fileData = await readFileAsDataURL(fileInput.files[0]);
+} else if (savedDocs[label]) {
+fileName = savedDocs[label].fileName;
+fileData = savedDocs[label].fileData;
+}
+
+return { name: label, fileName, fileData, status: fileData ? 'Uploaded' : 'Pending' };
+});
+
+const processedReqDocs = await Promise.all(docPromises);
+
+const customDocsRows = document.querySelectorAll('.custom-doc-row');
+const customDocPromises = Array.from(customDocsRows).map(async row => {
+const docName = row.querySelector('.custom-doc-name').value.trim();
+const fileInput = row.querySelector('.custom-doc-file');
+let fileData = null;
+let fileName = null;
+if (fileInput.files && fileInput.files[0]) {
+fileName = fileInput.files[0].name;
+fileData = await readFileAsDataURL(fileInput.files[0]);
+}
+return docName ? { name: docName, fileName, fileData, status: fileData ? 'Uploaded' : 'Pending' } : null;
+});
+
+const processedCustomDocs = (await Promise.all(customDocPromises)).filter(Boolean);
+
+const submission = {
+id: Date.now(),
+serviceId: service.id,
+serviceName: service.name,
+fee: service.tier || 'N/A',
+category: getCategoryBadge(service.category),
+customer: { name, phone, email, address },
+requiredDocs: processedReqDocs,
+customDocs: processedCustomDocs,
+notes: notes,
+status: 'Pending',
+date: new Date().toLocaleString()
+};
+
+lastActiveSubmissionId = submission.id;
+
+let orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+orders.unshift(submission);
+localStorage.setItem('msn_orders', JSON.stringify(orders));
+
+if (currentUser && currentUser.isOwner) updateOwnerStats();
+
+closeModalDirectly();
+document.getElementById('successModalOverlay').classList.add('active');
+}
+
+function reEditApplication() {
+document.getElementById('successModalOverlay').classList.remove('active');
+if (lastActiveSubmissionId) {
+const orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+const order = orders.find(o => o.id === lastActiveSubmissionId);
+if (order) {
+openModal(order.serviceId);
+return;
+}
+}
+document.getElementById('appModalOverlay').classList.add('active');
+}
+
+function closeSuccessModal() {
+document.getElementById('successModalOverlay').classList.remove('active');
+}
+
+function openOwnersManagementModal() {
+if (!currentUser || !currentUser.isPrimaryOwner) {
+alert("Unauthorized! Only Primary Owner can manage owners/loginers.");
+return;
+}
+renderSecondaryOwnersList();
+document.getElementById('ownersManagementModalOverlay').classList.add('active');
+}
+
+function closeOwnersManagementModal() {
+document.getElementById('ownersManagementModalOverlay').classList.remove('active');
+}
+
+function renderSecondaryOwnersList() {
+const container = document.getElementById('secondaryOwnersList');
+const list = getSecondaryOwners();
+
+if (list.length === 0) {
+container.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.85rem;">No additional loginers added yet.</div>`;
+return;
+}
+
+container.innerHTML = list.map((item, index) => `
+<div class="owner-item-row">
+<div class="owner-item-info">
+<span class="owner-item-name">${item.name}</span>
+<span class="owner-item-phone">Mobile: ${item.phone}</span>
+</div>
+<button class="btn-owner-delete" style="max-width:140px;" onclick="removeLoginer(${index})">Remove loginer</button>
+</div>
+`).join('');
+}
+
+function addNewLoginer(e) {
+e.preventDefault();
+const name = document.getElementById('newLoginerName').value.trim();
+const phone = document.getElementById('newLoginerPhone').value.trim();
+
+if (!name || !phone) {
+alert("Please enter both Username and Mobile Number for the new loginer.");
+return;
+}
+
+if (!isValid10DigitMobile(phone)) {
+alert("Invalid Mobile Number! It must be exactly 10 digits.");
+return;
+}
+
+let list = getSecondaryOwners();
+list.push({ name, phone, addedAt: new Date().toLocaleDateString() });
+localStorage.setItem('msn_secondary_owners', JSON.stringify(list));
+
+document.getElementById('newLoginerName').value = '';
+document.getElementById('newLoginerPhone').value = '';
+
+renderSecondaryOwnersList();
+alert(`Successfully added owner loginer: ${name}`);
+}
+
+function removeLoginer(index) {
+if (confirm("Are you sure you want to remove this owner loginer?")) {
+let list = getSecondaryOwners();
+list.splice(index, 1);
+localStorage.setItem('msn_secondary_owners', JSON.stringify(list));
+renderSecondaryOwnersList();
+}
+}
+
+function openAddHeadingModal() {
+if (!currentUser || !currentUser.isOwner) return;
+document.getElementById('editHeadingOldName').value = '';
+document.getElementById('headingCatSelect').value = currentCategory === 'all' ? 'meeseva' : currentCategory;
+document.getElementById('headingNameInput').value = '';
+document.getElementById('headingModalTitle').textContent = 'Add New Heading Box';
+document.getElementById('headingEditModalOverlay').classList.add('active');
+}
+
+function quickAddHeadingFromModal() {
+const cat = document.getElementById('editCardCategory').value;
+if (cat === 'docs') {
+alert("Upload Documents category uses standard headers.");
+return;
+}
+const newHeadingName = prompt(`Enter new heading name for ${cat === 'meeseva' ? 'MeeSeva Services' : 'Online Services'}:`);
+if (!newHeadingName || !newHeadingName.trim()) return;
+
+const nameVal = newHeadingName.trim();
+if (!categoryHeadings[cat]) categoryHeadings[cat] = [];
+if (!categoryHeadings[cat].includes(nameVal)) {
+categoryHeadings[cat].push(nameVal);
+localStorage.setItem('msn_category_headings', JSON.stringify(categoryHeadings));
+}
+populateHeadingSelect(cat, nameVal);
+if (currentCategory === cat) renderHeadingPills(cat);
+}
+
+function openEditHeadingModal(cat, headingName) {
+if (!currentUser || !currentUser.isOwner) return;
+document.getElementById('editHeadingOldName').value = headingName;
+document.getElementById('headingCatSelect').value = cat;
+document.getElementById('headingNameInput').value = headingName;
+document.getElementById('headingModalTitle').textContent = 'Edit Heading Name';
+document.getElementById('headingEditModalOverlay').classList.add('active');
+}
+
+function closeHeadingModal() {
+document.getElementById('headingEditModalOverlay').classList.remove('active');
+}
+
+function saveHeadingForm(e) {
+e.preventDefault();
+const oldName = document.getElementById('editHeadingOldName').value;
+const cat = document.getElementById('headingCatSelect').value;
+const newName = document.getElementById('headingNameInput').value.trim();
+
+if (!newName) return;
+
+if (!categoryHeadings[cat]) categoryHeadings[cat] = [];
+
+if (oldName) {
+const idx = categoryHeadings[cat].indexOf(oldName);
+if (idx !== -1) categoryHeadings[cat][idx] = newName;
+services.forEach(s => {
+if (s.category === cat && s.heading === oldName) s.heading = newName;
+});
+} else {
+if (!categoryHeadings[cat].includes(newName)) {
+categoryHeadings[cat].push(newName);
+}
+}
+
+localStorage.setItem('msn_category_headings', JSON.stringify(categoryHeadings));
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+
+closeHeadingModal();
+if (currentCategory === cat) {
+renderHeadingPills(cat);
+}
+filterServices();
+}
+
+function deleteHeading(cat, headingName) {
+if (!currentUser || !currentUser.isOwner) return;
+if (confirm(`Are you sure you want to remove heading "${headingName}"? Services under this heading will be moved to default.`)) {
+categoryHeadings[cat] = categoryHeadings[cat].filter(h => h !== headingName);
+services.forEach(s => {
+if (s.category === cat && s.heading === headingName) {
+s.heading = categoryHeadings[cat][0] || 'General';
+}
+});
+
+localStorage.setItem('msn_category_headings', JSON.stringify(categoryHeadings));
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+
+renderHeadingPills(cat);
+filterServices();
+}
+}
+
+function populateHeadingSelect(cat, selectedHeading = '') {
+const select = document.getElementById('editCardHeading');
+const headings = categoryHeadings[cat] || ['General'];
+select.innerHTML = headings.map(h => `<option value="${h}" ${h === selectedHeading ? 'selected' : ''}>${h}</option>`).join('');
+}
+
+function appendDocumentInput() {
+const container = document.getElementById('editCardDocs').parentNode;
+const input = document.createElement('input');
+input.type = 'text';
+input.className = 'form-input edit-doc-extra-input';
+input.placeholder = 'Another required document name';
+input.style.marginTop = '0.4rem';
+container.appendChild(input);
+}
+
+function openAddCardModal() {
+if (!currentUser || !currentUser.isOwner) {
+alert("Only Owner / Admin can add new service or document boxes!");
+return;
+}
+document.getElementById('editCardId').value = '';
+document.getElementById('editCardName').value = '';
+const defCat = currentCategory === 'all' ? 'meeseva' : currentCategory;
+document.getElementById('editCardCategory').value = defCat;
+populateHeadingSelect(defCat);
+document.getElementById('editCardTier').value = '';
+document.getElementById('editCardDocs').value = '';
+
+const container = document.getElementById('editCardDocs').parentNode;
+const extras = container.querySelectorAll('.edit-doc-extra-input');
+extras.forEach(el => el.remove());
+
+document.getElementById('ownerEditModalTitle').textContent = 'Add New Upload Documents & Service Box';
+document.getElementById('ownerEditModalOverlay').classList.add('active');
+}
+
+function openEditCardModal(id) {
+if (!currentUser || !currentUser.isOwner) {
+alert("Only Owner / Admin can edit service boxes!");
+return;
+}
+const card = services.find(s => s.id === id);
+if (!card) return;
+document.getElementById('editCardId').value = card.id;
+document.getElementById('editCardName').value = card.name;
+document.getElementById('editCardCategory').value = card.category;
+populateHeadingSelect(card.category, card.heading);
+document.getElementById('editCardTier').value = card.tier || '';
+
+const container = document.getElementById('editCardDocs').parentNode;
+const extras = container.querySelectorAll('.edit-doc-extra-input');
+extras.forEach(el => el.remove());
+
+if (card.docs && card.docs.length > 0) {
+document.getElementById('editCardDocs').value = card.docs[0];
+for (let i = 1; i < card.docs.length; i++) {
+const input = document.createElement('input');
+input.type = 'text';
+input.className = 'form-input edit-doc-extra-input';
+input.value = card.docs[i];
+input.style.marginTop = '0.4rem';
+container.appendChild(input);
+}
+} else {
+document.getElementById('editCardDocs').value = '';
+}
+
+document.getElementById('ownerEditModalTitle').textContent = 'Edit Box Details (Change/Edit/Add)';
+document.getElementById('ownerEditModalOverlay').classList.add('active');
+}
+
+function closeOwnerEditModal() {
+document.getElementById('ownerEditModalOverlay').classList.remove('active');
+}
+
+function saveOwnerCard(e) {
+e.preventDefault();
+if (!currentUser || !currentUser.isOwner) {
+alert("Only Owner / Admin can save card changes!");
+return;
+}
+
+const idStr = document.getElementById('editCardId').value;
+const name = document.getElementById('editCardName').value.trim();
+const category = document.getElementById('editCardCategory').value;
+const heading = document.getElementById('editCardHeading').value || 'General';
+const tier = document.getElementById('editCardTier').value ? parseInt(document.getElementById('editCardTier').value) : null;
+
+const container = document.getElementById('editCardDocs').parentNode;
+const allDocInputs = container.querySelectorAll('input');
+let docs = [];
+allDocInputs.forEach(input => {
+const val = input.value.trim();
+if (val) {
+val.split(',').forEach(sub => {
+if (sub.trim()) docs.push(sub.trim());
+});
+}
+});
+
+if (docs.length === 0) {
+docs = ['Aadhaar Card', 'Passport Photo', 'Signature'];
+}
+
+if (idStr) {
+const cardId = parseInt(idStr);
+const idx = services.findIndex(s => s.id === cardId);
+if (idx !== -1) {
+services[idx] = { id: cardId, category, heading, tier, name, docs };
+}
+} else {
+const newId = Date.now();
+services.unshift({ id: newId, category, heading, tier, name, docs });
+}
+
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+closeOwnerEditModal();
+if (currentUser && currentUser.isOwner) {
+updateOwnerStats();
+updateTabCounts();
+}
+filterServices();
+}
+
+function deleteCard(id) {
+if (!currentUser || !currentUser.isOwner) {
+alert("Only Owner / Admin can remove catalog cards!");
+return;
+}
+if (confirm("Are you sure you want to completely remove this box/service from the portal?")) {
+services = services.filter(s => s.id !== id);
+localStorage.setItem('msn_catalog', JSON.stringify(services));
+if (currentUser && currentUser.isOwner) {
+updateOwnerStats();
+updateTabCounts();
+}
+filterServices();
+}
+}
+
+function toggleSubmissionsView() {
+showingOwnerSubmissions = !showingOwnerSubmissions;
+const btn = document.getElementById('toggleSubmissionsBtn');
+const catView = document.getElementById('catalogView');
+const subView = document.getElementById('ownerSubmissionsView');
+
+if (showingOwnerSubmissions) {
+btn.textContent = 'View Catalog Grid';
+catView.style.display = 'none';
+subView.style.display = 'block';
+renderOwnerSubmissions();
+} else {
+btn.textContent = 'View Customer Submissions';
+catView.style.display = 'block';
+subView.style.display = 'none';
+filterServices();
+}
+}
+
+function renderOwnerSubmissions() {
+const orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+const container = document.getElementById('ownerSubmissionsGrid');
+
+if (orders.length === 0) {
+container.innerHTML = `<div style="text-align:center; padding: 3rem; color:var(--text-muted);">No customer submissions or records found.</div>`;
+return;
+}
+
+container.innerHTML = orders.map(o => `
+<div class="sub-card">
+<div class="sub-info" onclick="openOwnerInspector(${o.id})" style="cursor:pointer; flex:1;">
+<h4>${o.serviceName}</h4>
+<p>Customer: <strong>${o.customer.name}</strong> (${o.customer.phone})</p>
+<p style="font-size: 0.8rem; margin-top: 0.2rem;">Email: ${o.customer.email} | Date: ${o.date}</p>
+</div>
+<div class="sub-meta">
+<span class="status-tag">${o.status}</span>
+<span style="font-weight:700; color:var(--primary);">${o.fee !== 'N/A' ? '₹' + o.fee : 'Document Request'}</span>
+<button class="btn-owner-edit" onclick="openOwnerInspector(${o.id})">Inspect</button>
+<button class="btn-owner-delete" onclick="deleteSubmissionRecord(${o.id})">Delete</button>
+</div>
+</div>
+`).join('');
+}
+
+function openOwnerInspector(orderId) {
+const orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+const order = orders.find(o => o.id === orderId);
+if (!order) return;
+
+document.getElementById('inspServiceName').textContent = order.serviceName;
+document.getElementById('inspDate').textContent = `Submitted: ${order.date} | Category: ${order.category}`;
+document.getElementById('inspCustName').textContent = order.customer.name;
+document.getElementById('inspCustPhone').textContent = order.customer.phone;
+document.getElementById('inspCustEmail').textContent = order.customer.email;
+document.getElementById('inspCustAddress').textContent = order.customer.address;
+document.getElementById('inspNotes').textContent = order.notes || 'No specific instructions provided.';
+
+const btnDelete = document.getElementById('btnDeleteSubmission');
+btnDelete.onclick = () => { deleteSubmissionRecord(order.id); closeInspector(); };
+
+const allDocs = [...(order.requiredDocs || []), ...(order.customDocs || [])];
+const docsContainer = document.getElementById('inspDocsList');
+docsContainer.innerHTML = allDocs.map(d => `
+<div class="req-doc-item">
+<div>
+<div class="req-doc-name">${d.name}</div>
+${d.fileName ? `<span style="font-size:0.75rem; color:var(--text-muted);">${d.fileName}</span>` : ''}
+</div>
+<div>
+${d.fileData ? `<a href="${d.fileData}" download="${d.fileName || 'document'}" class="doc-file-link">View / Download</a>` : `<span style="color:#ef4444; font-size:0.8rem;">Not Attached</span>`}
+</div>
+</div>
+`).join('');
+
+document.getElementById('ownerInspectorOverlay').classList.add('active');
+}
+
+function closeInspector() {
+document.getElementById('ownerInspectorOverlay').classList.remove('active');
+}
+
+function deleteSubmissionRecord(id) {
+if (confirm("Are you sure you want to remove this submission record?")) {
+let orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+orders = orders.filter(o => o.id !== id);
+localStorage.setItem('msn_orders', JSON.stringify(orders));
+updateOwnerStats();
+if (showingOwnerSubmissions) renderOwnerSubmissions();
+}
+}
+
+function clearAllSubmissionsData() {
+if (confirm('Are you sure you want to clear ALL customer submissions?')) {
+localStorage.removeItem('msn_orders');
+updateOwnerStats();
+if (showingOwnerSubmissions) renderOwnerSubmissions();
+}
+}
+
+function openAddRecordModal() {
+document.getElementById('ownerRecordForm').reset();
+document.getElementById('ownerRecordModalOverlay').classList.add('active');
+}
+
+function closeOwnerRecordModal() {
+document.getElementById('ownerRecordModalOverlay').classList.remove('active');
+}
+
+function saveOwnerRecord(e) {
+e.preventDefault();
+const name = document.getElementById('recCustName').value.trim();
+const phone = document.getElementById('recCustPhone').value.trim();
+const email = document.getElementById('recCustEmail').value.trim();
+const address = document.getElementById('recCustAddress').value.trim();
+const serviceName = document.getElementById('recServiceName').value.trim();
+const notes = document.getElementById('recNotes').value.trim();
+
+if (!isValid10DigitMobile(phone)) {
+alert("Invalid mobile number! Mobile number must be exactly 10 digits.");
+return;
+}
+
+const record = {
+id: Date.now(),
+serviceId: 0,
+serviceName: serviceName,
+fee: 'N/A',
+category: 'Manual Entry',
+customer: { name, phone, email, address },
+requiredDocs: [],
+customDocs: [],
+notes: notes,
+status: 'Added by Owner',
+date: new Date().toLocaleString()
+};
+
+let orders = JSON.parse(localStorage.getItem('msn_orders') || '[]');
+orders.unshift(record);
+localStorage.setItem('msn_orders', JSON.stringify(orders));
+
+updateOwnerStats();
+closeOwnerRecordModal();
+if (showingOwnerSubmissions) renderOwnerSubmissions();
+}
+
+window.onload = () => {
+const savedUser = localStorage.getItem('msn_user');
+if (savedUser) {
+currentUser = JSON.parse(savedUser);
+document.getElementById('authGateway').style.display = 'none';
+initApp();
+} else {
+document.getElementById('authGateway').style.display = 'flex';
+}
+};
+</script>
+</body>
+</html>
