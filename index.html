@@ -6,6 +6,8 @@
 <title>MSN Communications Portal & Silver Particle Terrain</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- RAZORPAY CHECKOUT SCRIPT -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
 :root {
 --primary: #38bdf8;
@@ -643,7 +645,8 @@ Back to Portal
 
 <div class="action-buttons-wrapper">
 <button type="button" class="btn-edit-app" onclick="resetFormToSaved()" title="Reset to auto-saved user details">Reset Details</button>
-<button type="button" class="btn-submit-app" onclick="submitApplicationDirectly()">Submit Application</button>
+<!-- RAZORPAY INTEGRATED SUBMIT BUTTON -->
+<button type="button" class="btn-submit-app" onclick="payWithRazorpay()">Pay & Submit Application</button>
 </div>
 </div>
 </div>
@@ -658,8 +661,8 @@ Back to Portal
 <path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
 </svg>
 </div>
-<h3>Submission Successful!</h3>
-<p>Your details and documents have been processed and submitted to MSN Communications Dashboard.</p>
+<h3>Payment & Submission Successful!</h3>
+<p>Your payment via Razorpay was completed and your details have been submitted to MSN Communications Dashboard.</p>
 <div style="display:flex; gap:0.8rem; justify-content:center;">
 <button class="auth-btn" style="flex:1;" onclick="reEditApplication()">Edit Details</button>
 <button class="auth-btn" style="flex:1; background: var(--success);" onclick="closeSuccessModal()">Done</button>
@@ -1550,7 +1553,8 @@ reader.readAsDataURL(file);
 });
 }
 
-async function submitApplicationDirectly() {
+// RAZORPAY INTEGRATION & APPLICATION SUBMISSION
+async function payWithRazorpay() {
 const serviceId = parseInt(document.getElementById('activeServiceId').value);
 const service = services.find(s => s.id === serviceId);
 
@@ -1578,6 +1582,66 @@ return;
 }
 autoSaveUserData();
 }
+
+const amountInRupees = service.tier || 0;
+
+// If service is free / document upload (0 rupees), submit directly without Razorpay popup
+if (!amountInRupees || amountInRupees <= 0) {
+executeApplicationSubmission("Free / No Fee", "N/A");
+return;
+}
+
+// Razorpay Options Configuration
+const options = {
+"key": "rzp_test_YOUR_KEY_HERE", // Replace with your actual Razorpay Test/Live Key ID
+"amount": amountInRupees * 100, // Amount in paise (e.g. ₹180 = 18000 paise)
+"currency": "INR",
+"name": "MSN Communications",
+"description": `Payment for ${service.name}`,
+"image": "", 
+"handler": function (response) {
+// Payment successful callback
+const paymentId = response.razorpay_payment_id;
+executeApplicationSubmission("Paid Online", paymentId);
+},
+"prefill": {
+"name": name,
+"email": email,
+"contact": phone
+},
+"notes": {
+"service_name": service.name,
+"address": address
+},
+"theme": {
+"color": "#38bdf8"
+}
+};
+
+try {
+const rzp1 = new Razorpay(options);
+rzp1.on('payment.failed', function (response){
+alert("Payment failed: " + response.error.description);
+});
+rzp1.open();
+} catch (error) {
+console.error("Razorpay error or key not configured:", error);
+// Fallback if Razorpay SDK isn't loaded or keys are default placeholders
+if (confirm("Razorpay gateway could not open automatically (or key is placeholder). Proceed with simulated successful payment & submission?")) {
+executeApplicationSubmission("Simulated Paid", "pay_simulated_" + Date.now());
+}
+}
+}
+
+async function executeApplicationSubmission(paymentStatus, paymentId) {
+const serviceId = parseInt(document.getElementById('activeServiceId').value);
+const service = services.find(s => s.id === serviceId);
+
+let name = service.category === 'docs' ? "Document Upload User" : document.getElementById('custName').value.trim();
+let phone = service.category === 'docs' ? "0000000000" : document.getElementById('custPhone').value.trim();
+let email = service.category === 'docs' ? "docupload@msn.com" : document.getElementById('custEmail').value.trim();
+let address = service.category === 'docs' ? "N/A" : document.getElementById('custAddress').value.trim();
+let notes = service.category === 'docs' ? "" : document.getElementById('custNotes').value.trim();
 
 const savedDocs = getSavedUserDocuments();
 
@@ -1626,6 +1690,8 @@ customer: { name, phone, email, address },
 requiredDocs: processedReqDocs,
 customDocs: processedCustomDocs,
 notes: notes,
+paymentStatus: paymentStatus,
+paymentId: paymentId,
 status: 'Pending',
 date: new Date().toLocaleString()
 };
@@ -1996,6 +2062,7 @@ container.innerHTML = orders.map(o => `
 </div>
 <div class="sub-meta">
 <span class="status-tag">${o.status}</span>
+<span style="font-size:0.75rem; color:var(--primary); font-weight:600;">[${o.paymentStatus || 'N/A'}]</span>
 <span style="font-weight:700; color:var(--primary);">${o.fee !== 'N/A' ? '₹' + o.fee : 'Document Request'}</span>
 <button class="btn-owner-edit" onclick="openOwnerInspector(${o.id})">Inspect</button>
 <button class="btn-owner-delete" onclick="deleteSubmissionRecord(${o.id})">Delete</button>
@@ -2010,7 +2077,7 @@ const order = orders.find(o => o.id === orderId);
 if (!order) return;
 
 document.getElementById('inspServiceName').textContent = order.serviceName;
-document.getElementById('inspDate').textContent = `Submitted: ${order.date} | Category: ${order.category}`;
+document.getElementById('inspDate').textContent = `Submitted: ${order.date} | Category: ${order.category} | Payment: ${order.paymentStatus || 'N/A'} (${order.paymentId || 'N/A'})`;
 document.getElementById('inspCustName').textContent = order.customer.name;
 document.getElementById('inspCustPhone').textContent = order.customer.phone;
 document.getElementById('inspCustEmail').textContent = order.customer.email;
@@ -2092,6 +2159,8 @@ customer: { name, phone, email, address },
 requiredDocs: [],
 customDocs: [],
 notes: notes,
+paymentStatus: 'Manual Entry',
+paymentId: 'N/A',
 status: 'Added by Owner',
 date: new Date().toLocaleString()
 };
